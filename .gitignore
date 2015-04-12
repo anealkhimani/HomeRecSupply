@@ -1,6 +1,7 @@
 # Config and Htaccess Files
 .htaccess
 config.php
+php.ini
 /admin/config.php
 
 # System Cache Files
