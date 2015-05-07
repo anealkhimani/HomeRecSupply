@@ -37,6 +37,18 @@
 <script src="<?php echo $script; ?>" type="text/javascript"></script>
 <?php } ?>
 <?php echo $google_analytics; ?>
+<?php
+$homepage = "/index.php?route=common/home";
+$homepage2 = "/index.php";
+$homepage3 = "/";
+$currentpage = $_SERVER['REQUEST_URI'];
+if($homepage==$currentpage || $homepage2==$currentpage || $homepage3==$currentpage ) { ?>
+
+<link rel="canonical" href="http://www.homerecsupply.com/" />
+
+<?php }?>
+<meta name="google-site-verification" content="vsKC0mQFgBMqWK_T3MubVGNlnXSdz3isHOySNZUBzqg" />
+<meta name="msvalidate.01" content="AEACD7D553D122153C6E5DD64141E4BF" />
 </head>
 <body class="<?php echo $class; ?>">
 <nav id="top">
@@ -73,7 +85,7 @@
       <div class="col-sm-4">
         <div id="logo">
           <?php if ($logo) { ?>
-          <a href="<?php echo $home; ?>"><img src="<?php echo $logo; ?>" title="<?php echo $name; ?>" alt="<?php echo $name; ?>" class="img-responsive" /></a>
+          <a href="<?php echo $home; ?>"><img src="<?php echo $logo; ?>" alt="Home Rec Supply - Gameroom & Leisure Products McDonough, Georgia (GA)" class="img-responsive" /></a>
           <?php } else { ?>
           <h1><a href="<?php echo $home; ?>"><?php echo $name; ?></a></h1>
           <?php } ?>

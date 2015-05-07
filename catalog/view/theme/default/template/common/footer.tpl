@@ -39,9 +39,25 @@
       </div>
     </div>
     <hr>
-    <p><?php echo $powered; ?></p>
+    <p><?php echo $powered; ?> <span itemscope itemtype="http://schema.org/LocalBusiness">
+   | <span itemprop="address" itemscope itemtype="http://schema.org/PostalAddress">
+     <span itemprop="streetAddress">429 McDonough Parkway</span>
+     <span itemprop="addressLocality">McDonough</span>,
+     <span itemprop="addressRegion">GA</span>
+     <span itemprop="postalCode">30253</span>
+   | <span itemprop="telephone">404-800-7975</span>
+   </span>
+</span> <span class="g-plusone" data-size="small" data-annotation="none"></span></p>
   </div>
 </footer>
+ <!-- Google +1 button script. -->
+<script type="text/javascript">
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/plusone.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
 
 <!--
 OpenCart is open source software and you are free to remove the powered by OpenCart if you want, but its generally accepted practise to make a small donation.
