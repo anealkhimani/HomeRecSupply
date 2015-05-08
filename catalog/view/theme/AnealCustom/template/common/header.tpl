@@ -29,6 +29,7 @@
 <link href="catalog/view/javascript/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
 <link href="//fonts.googleapis.com/css?family=Open+Sans:400,400i,300,700" rel="stylesheet" type="text/css" />
 <link href="catalog/view/theme/default/stylesheet/stylesheet.css" rel="stylesheet">
+<link href="catalog/view/theme/AnealCustom/stylesheet/stylesheet.css" rel="stylesheet">
 <?php foreach ($styles as $style) { ?>
 <link href="<?php echo $style['href']; ?>" type="text/css" rel="<?php echo $style['rel']; ?>" media="<?php echo $style['media']; ?>" />
 <?php } ?>
@@ -38,34 +39,38 @@
 <?php } ?>
 <?php echo $google_analytics; ?>
 <?php
-		if($_SERVER['REQUEST_URI'] == "/index.php" or $_SERVER["REQUEST_URI"] == "/"){
-			?>
+$homepage = "/index.php?route=common/home";
+$homepage2 = "/index.php";
+$homepage3 = "/";
+$currentpage = $_SERVER['REQUEST_URI'];
+if($homepage==$currentpage || $homepage2==$currentpage || $homepage3==$currentpage ) { ?>
+
 <link rel="canonical" href="http://www.homerecsupply.com/" />
+
+<?php }?>
 <meta name="google-site-verification" content="vsKC0mQFgBMqWK_T3MubVGNlnXSdz3isHOySNZUBzqg" />
 <meta name="msvalidate.01" content="AEACD7D553D122153C6E5DD64141E4BF" />
-<?php
-		}					
-	?>
-<script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-  ga('create', 'UA-60110688-1', 'auto');
-  ga('require', 'displayfeatures');
-  ga('send', 'pageview');
-
-</script>
 </head>
 <body class="<?php echo $class; ?>">
 <nav id="top">
   <div class="container">
-    <?php //echo $currency; ?>
+    <!-- Removed echo $currency here -->
     <?php echo $language; ?>
     <div id="top-links" class="nav pull-right">
       <ul class="list-inline">
-        <li><a href="<?php echo $contact; ?>"><i class="fa fa-phone"></i></a> <span class="hidden-xs hidden-sm hidden-md"><?php echo $telephone; ?></span></li>
+        <!-- Custom Phone/Address Section -->
+        <li>
+          <a href="<?php echo $contact; ?>">
+            <span id = "address_head">429 McDonough Parkway<br />McDonough, GA 30253</span>
+          </a>
+        </li>
+        <li>
+          <a href="<?php echo $contact; ?>">
+            <span id = "phone_number">404-800-7975</span>
+          </a>
+        </li>            
+        <!-- End Custom Phone/Address Section -->
+
         <li class="dropdown"><a href="<?php echo $account; ?>" title="<?php echo $text_account; ?>" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-user"></i> <span class="hidden-xs hidden-sm hidden-md"><?php echo $text_account; ?></span> <span class="caret"></span></a>
           <ul class="dropdown-menu dropdown-menu-right">
             <?php if ($logged) { ?>
@@ -93,7 +98,7 @@
       <div class="col-sm-4">
         <div id="logo">
           <?php if ($logo) { ?>
-          <a href="<?php echo $home; ?>"><img src="<?php echo $logo; ?>" alt="Home Rec Supply - Gameroom & Leisure Products McDonough, Georgia (GA)" class="img-responsive" class="img-responsive" /></a>
+          <a href="<?php echo $home; ?>"><img src="<?php echo $logo; ?>" alt="Home Rec Supply - Gameroom & Leisure Products McDonough, Georgia (GA)" class="img-responsive" /></a>
           <?php } else { ?>
           <h1><a href="<?php echo $home; ?>"><?php echo $name; ?></a></h1>
           <?php } ?>
@@ -101,31 +106,12 @@
       </div>
       <div class="col-sm-5"><?php echo $search; ?>
       </div>
-      <div class="col-sm-3"><?php echo $cart; ?><br><br>
-<!-- Place this code where you want the badge to render. -->
-<p style="text-align:center"><a href="https://plus.google.com/115199072089687150466?prsrc=3"
-   rel="publisher" target="_blank" style="text-decoration:none;">
-<img src="//ssl.gstatic.com/images/icons/gplus-32.png" alt="Google+" style="border:0;width:32px;height:32px;"/>
-</a></p>
-</div>
+      <div class="col-sm-3"><?php echo $cart; ?></div>
     </div>
   </div>
 </header>
 <?php if ($categories) { ?>
 <div class="container">
-  
-  <!-- Aneal's custom menu -->
-  <nav class = "navbar">
-    <ul class = "nav navbar-nav">
-      <?php
-        foreach($informations as $info) {
-          echo "<li><a href = '" . $info['href'] . "'>" . $info['title'] . "</a></li>";
-        }
-      ?>
-    </ul>
-  </nav>
-  <!-- End Aneal's custom menu-->
-
   <nav id="menu" class="navbar">
     <div class="navbar-header"><span id="category" class="visible-xs"><?php echo $text_category; ?></span>
       <button type="button" class="btn btn-navbar navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse"><i class="fa fa-bars"></i></button>
