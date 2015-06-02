@@ -120,6 +120,8 @@
                   If so, we'll display the text 'Call for Price' as we're not allowed
                   to display this product's price.
                   *******************************************************************/
+                  // Variable
+                  $anealtemp = 0;
 
                   if ($product['price']) {
 
