@@ -31,7 +31,8 @@
 	<div class = "container-fluid">
 		<div class = "row">
 			<div class = "col-md-6">
-				<img src="http://homerecsupply.com/image/catalog/MEMORIAL DAY TENT EVENT/MDAY.jpg" style="width: 332px; height: 227px;" />
+				<img src="http://homerecsupply.com/image/catalog/MEMORIAL DAY TENT EVENT/MDAY.jpg" style="width: 332px; height: 227px;" /><br />
+				<img src="http://homerecsupply.com/image/catalog/0.jpg" style="width: 332px;" />
 				<br />
 				<div class = "well">
 

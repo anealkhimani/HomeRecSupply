@@ -10,11 +10,13 @@ php.ini
 !/system/cache/index.html
 
 # Image File
+/image
 !/image/no_image.jpg
 
 # Image Cache Files
 /image/cache/*
 !/image/cache/index.html
+
 
 # Modification Files
 /system/modification/*
