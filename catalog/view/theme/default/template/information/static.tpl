@@ -31,27 +31,21 @@
 	<div class = "container-fluid">
 		<div class = "row">
 			<div class = "col-md-6">
-				<img src="http://homerecsupply.com/image/catalog/MEMORIAL DAY TENT EVENT/MDAY.jpg" style="width: 332px; height: 227px;" /><br />
+				<!-- <img src="http://homerecsupply.com/image/catalog/MEMORIAL DAY TENT EVENT/MDAY.jpg" style="width: 332px; height: 227px;" /><br /> -->
 				<img src="http://homerecsupply.com/image/catalog/0.jpg" style="width: 332px;" />
 				<br />
 				<div class = "well">
 
 					<div class = "row">
-						<div class = "col-md-6"><h2 class = "text-info"><b>Friday, May 22</b></h2></div>
+						<div class = "col-md-6"><h2 class = "text-info"><b>Friday,</b></h2></div>
 						<div class = "col-md-6"><h2 class = "text-info"><b>10am til 6pm</b></h2></div>
 					</div>
 					
 					<div class = "row">
-						<div class = "col-md-6"><h2 class = "text-info"><b>Saturday, May 23</b></h2></div>
+						<div class = "col-md-6"><h2 class = "text-info"><b>Saturday, </b></h2></div>
 						<div class = "col-md-6"><h2 class = "text-info"><b>10am til 6pm</b></h2></div>
 					</div>
 					
-					<div class = "row">
-						<div class = "col-md-6"><h2 class = "text-info"><b>Sunday, May 24</b></h2></div>
-						<div class = "col-md-6"><h2 class = "text-info"><b>11am til 6pm</b></h2></div>
-					</div>
-
-
 				</div>
 					<h2 class = "anealbig">Come See us at <span class = "anealspan">HomeRec Gameroom and Leisure</span> in McDonough!</h2><hr />
 					<h2 class = "anealbig">Up to 50% off Retail Prices!</h2><hr />
