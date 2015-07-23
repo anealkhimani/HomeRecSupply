@@ -22,14 +22,7 @@ class ControllerModuleFeatured extends Controller {
 		}
 
 		if (!empty($setting['product'])) {
-
-			$products=array();
-			$temp = array_rand($setting['product'], (int)$setting['limit']);
-			foreach($temp as $t) {
-				array_push($products, $setting['product'][$t]);
-			}
-
-			// $products = array_slice($setting['product'], 0, (int)$setting['limit']);
+			$products = array_slice($setting['product'], 0, (int)$setting['limit']);
 
 			foreach ($products as $product_id) {
 				$product_info = $this->model_catalog_product->getProduct($product_id);
