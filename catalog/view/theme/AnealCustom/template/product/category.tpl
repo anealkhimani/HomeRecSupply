@@ -14,7 +14,9 @@
     <?php $class = 'col-sm-12'; ?>
     <?php } ?>
     <div id="content" class="<?php echo $class; ?>"><?php echo $content_top; ?>
-      <h1 style="font-size: 27px"><?php echo $heading_title; ?></h1>
+
+     <!-- Removed heading title here by echo $heading_title -->
+
       <?php if ($thumb || $description) { ?>
       <div class="row">
         <?php if ($thumb) { ?>
