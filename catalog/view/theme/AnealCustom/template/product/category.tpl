@@ -26,7 +26,7 @@
         <div class="col-sm-10"><?php echo $description; ?></div>
         <?php } ?>
       </div>
-      <hr>
+      <!-- Removed an <hr> tag here -->
       <?php } ?>
       <?php if ($categories) { ?>
       <h3><?php echo $text_refine; ?></h3>
