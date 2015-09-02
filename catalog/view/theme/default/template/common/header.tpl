@@ -47,7 +47,6 @@ if($homepage==$currentpage || $homepage2==$currentpage || $homepage3==$currentpa
 <link rel="canonical" href="http://www.homerecsupply.com/" />
 
 <?php }?>
-<meta name="google-site-verification" content="vsKC0mQFgBMqWK_T3MubVGNlnXSdz3isHOySNZUBzqg" />
 <meta name="msvalidate.01" content="AEACD7D553D122153C6E5DD64141E4BF" />
 </head>
 <body class="<?php echo $class; ?>">
