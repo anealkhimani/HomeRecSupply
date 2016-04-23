@@ -79,7 +79,16 @@
             <?php foreach ($product['option'] as $option) { ?>
             <br />
             &nbsp;<small> - <?php echo $option['name']; ?>: <?php echo $option['value']; ?></small>
-            <?php } ?></td>
+            <?php } ?>
+			<?php if (!empty($product['weight_price'])) { ?>
+			<br />
+			&nbsp;<small> - <?php echo $product['weight_name']; ?>: <?php echo $product['weight']; ?></small>
+			<?php }?>
+			<?php if (!empty($product['sns'])) { foreach ($product['sns'] as $product_sn) { ?>
+			<br />
+			&nbsp;<small> - SN: <?php echo $product_sn['sn']; ?></small>
+			<?php }}?>
+		  </td>
           <td><?php echo $product['model']; ?></td>
           <td class="text-right"><?php echo $product['quantity']; ?></td>
           <td class="text-right"><?php echo $product['price']; ?></td>
@@ -96,6 +105,35 @@
         <?php } ?>
       </tbody>
     </table>
+	<?php if (!empty($payments)) { ?>
+	<table class="table table-bordered">
+		<thead>
+		<tr>
+			<td class="text-left" width="40%"><b><?php echo $column_type; ?></b></td>
+			<td class="text-right" width="15%"><b><?php echo $column_amount; ?></b>&nbsp;</td>
+			<td class="text-left" width="45%"><b><?php echo $column_note; ?></b></td>
+		</tr>
+		</thead>
+		<tbody id="receipt_payments">
+		<?php foreach ($payments as $payment) { if ((float)$payment['amount_float'] > 0) { ?>
+		<tr>
+			<td class="text-left"><?php echo $payment['type']; ?></td>
+			<td class="text-right"><?php echo $payment['amount']; ?>&nbsp;</td>
+			<td class="text-left"><?php echo (''==$payment['note'])?'&nbsp;':$payment['note']; ?></td>
+		</tr>
+		<?php }} ?>
+		<tbody id="receipt_change">
+		<?php if(isset($change)) { ?>
+		<tr>
+			<td class="text-left"><?php echo $text_change; ?></td>
+			<td class="text-right"><?php echo $change; ?>&nbsp;</td>
+			<td class="text-left">&nbsp;</td>
+		</tr>
+		</tbody>
+		<?php } ?>
+		</tbody>
+	</table>
+	<?php } ?>
 	<div id="invoice_comment">
     <?php if ($order['comment']) { ?>
     <table class="table table-bordered">

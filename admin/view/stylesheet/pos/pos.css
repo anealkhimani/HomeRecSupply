@@ -1084,6 +1084,17 @@ a, a span, button, button span, input, textarea, img, .main-container, .left-con
 .btn.complete:hover{
 	background:#cc6161;
 }
+.btn.close-order{
+	background:#c1c1c1;
+	border-color:#a0a0a0;
+}
+.btn.close-order .icon{
+	background-position: -203px -47px;
+	margin-right:3px;
+}
+.btn.close-order:hover{
+	background:#a0a0a0;
+}
 /******************* Custom Select ************************/
 .select_wrap{
 	float:right;
@@ -2218,7 +2229,7 @@ ul.pos-pager li a.last:hover{
 	display:none;
 }
 .payment_l{
-	width:100%;
+	width:50%;
 	float:left;
 	box-sizing:border-box;
 }

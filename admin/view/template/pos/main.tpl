@@ -19,12 +19,26 @@
 			<div class="select_wrap">
 				<select name="work_mode_dropdown" id="work_mode_dropdown" class="select_type">
 				  <option value="sale" selected="selected"><?php echo $text_workmode_sale; ?></option>
+				  <option value="return_order"><?php echo $text_workmode_return_with_order; ?></option>
+				  <option value="return_without_order"><?php echo $text_workmode_return_no_order; ?></option>
+				  <option value="quote"><?php echo $text_workmode_quote; ?></option>
+				  <option value="cash_in"><?php echo $text_cash_in; ?></option>
+				  <option value="cash_out"><?php echo $text_cash_out; ?></option>
 				</select>
 			</div>
 			<div class="message success">
 				<div class="icon"></div> 
 				<p></p>
 			</div>
+			<!-- Other messages are shown below -->
+			<!--<div class="message error">
+				<div class="icon"></div> 
+				<p>Sample Eror message will look like this</p>
+			</div>
+			<div class="message notification">
+				<div class="icon"></div>
+				<p></p>
+			</div>-->
 			<a class="menu-toggle"></a>
 		</div>
 		<div class="main-container"> 
@@ -38,10 +52,38 @@
 				<div class="left-nav">
 					<!-- <h2><?php echo $text_order_options; ?></h2> -->
 					<ul>
-						<li><a onclick="getOrderList();"><span class="bg"><span class="icon order-id"></span></span><span class="txt" id="order_id_text"><?php echo $order_id_text; ?></span></a></li>
+						<?php
+							if (isset($config['enable_table_management']) && (int)$config['enable_table_management'] && $text_work_mode != '1') {
+								$table_display = $text_table_not_selected;
+								if (!empty($order_table_id)) {
+									foreach ($tables as $table) {
+										if ($table['table_id'] == $order_table_id) {
+											$table_display = $table['name'];
+											break;
+										}
+									}
+								}
+						?>
+						<li><a onclick="setTable();"><span class="bg"><span class="icon table-id"></span></span><span id="button_table" class="txt"><?php echo $table_display; ?></span></a></li>
+						<?php } ?>
+						<li><a onclick="getOrderList();"><span class="bg product-box-frame-wrap" id="button_order_list"><span class="icon order-id"></span></span><span class="txt" id="order_id_text"><?php echo $order_id_text; ?></span></a></li>
 						<li><a onclick="changeOrderStatus();"><span class="bg"><span class="icon order-status"></span></span><span class="txt" id="order_status_name"><?php echo !empty($order_status_name) ? $order_status_name : ''; ?></span></a></li>
+						<?php if (empty($config['hide_pos_shipping'])) { ?>
+						<li><a onclick="changeShippingDetails();"><span class="bg"><span class="icon shipping"></span></span><span class="txt" id="shipping_method"><?php echo $shipping_method; ?></span></a></li>
+						<?php }?>
 						<li><a onclick="changeOrderCustomer();"><span class="bg"><span class="icon customer"></span></span><span class="txt" id="customer"><?php echo $customer; ?></span></a></li>
 						<li><a onclick="changeOrderComment();"><span class="bg"><span class="icon comment"></span></span><span class="txt" id="order_comment"><?php echo $column_payment_note; ?></span></a></li>
+					</ul>
+				</div>
+				<div class="left-nav shortcuts">
+					<h2><?php echo $text_shortcuts; ?></h2>
+					<ul>
+						<?php for ($shortcut_i = 0; $shortcut_i < 5; $shortcut_i++) { ?>
+						<li style="display: none;"><a id="shortcut<?php echo $shortcut_i; ?>" onclick="gotoShortcut(this);">
+							<span class="bg"><span class="icon shortcut"></span></span><span class="txt"><?php echo $text_no_shortcut; ?></span>
+						</a></li>
+						<?php } ?>
+						<li><a onclick="moreShortcuts();"><span class="bg"><span class="icon shortcut"></span></span><span class="txt"><?php echo $text_more_shortcuts; ?></span></a></li>
 					</ul>
 				</div>
 			</div>
@@ -52,10 +94,12 @@
 				<div class="prdct-container">
 					<div class="prdct-header">
 						<!-- Use below heading for return for order -->
+						<div class="prdct-header-top return-order" id="return_control" style="display:none"></div>
 						<div class="prdct-header-top" id="add_product_control">
 							<div class="input-box">
 								<input type="search" autocomplete="off" id="search" name="filter_product"  placeholder="<?php echo $text_search_placeholder; ?>">
 							</div>
+							<a onclick="searchSettings();" class="settings"></a> <a onclick="quickSale();" class="non-catalog"><?php echo $text_title_quick_sale; ?></a> 
 						</div>                
 						<div class="breadcrumb-bg" id="browse_category_div">
 							<input type="hidden" name="current_category_id" value="0" />
@@ -64,11 +108,16 @@
 							<ul id="browse_category">
 								<li><a class="home-icon last" onclick="showCategoryItems('<?php echo $text_top_category_id; ?>')"></a></li>
 							</ul>
+							<a class="add-shortcut" id="button_set_shortcut">
+								<span class="tooltip"><?php echo $text_set_shortcut; ?></span>
+							</a>
 						</div>
 					</div>
 					<div class="product-box-outer" id="browse_list">
 						<input type="hidden" name="current_product_id" value="0" />
 						<input type="hidden" name="current_product_name" value="" />
+						<input type="hidden" name="current_product_weight_price" value="" />
+						<input type="hidden" name="current_product_weight_name" value="" />
 						<input type="hidden" name="current_product_hasOption" value="" />
 						<input type="hidden" name="current_product_price" value="" />
 						<input type="hidden" name="current_product_tax" value="" />
@@ -121,7 +170,68 @@
 					</div>
 					<div class="cart-outer-scroller">
 						<table width="100%" border="0" cellpadding="0" cellspacing="0">
+							<?php $product_row = 0; ?>
 							<tbody id="product">
+							<?php foreach ($products as $product) { $tr_class = ($product_row % 2) ? 'even' : 'odd'; ?>
+								<tr id="product-row<?php echo $product_row; ?>" class="<?php echo $tr_class; ?>">
+									<td align="center" valign="middle" class="one">
+										<span class="cart-round-img-outr" onclick="changeQuantity(this)">
+											<img src="<?php echo $product['image']; ?>" class="cart-round-img" alt="">
+											<a class="cart-round-qty"><?php echo $product['quantity']; ?></a>
+										</span>
+									</td>
+									<td align="left" valign="middle" class="two">
+										<span class="product-name">
+											<span class="raw-name"><?php echo $product['name']; ?></span>
+											<?php foreach ($product['option'] as $option) { ?>
+												<br />
+												&nbsp;<small> - <?php echo $option['name']; ?>: <?php echo $option['value']; ?></small>
+												<input type="hidden" name="order_product[<?php echo $product_row; ?>][order_option][<?php echo $option['product_option_id']; ?>][product_option_id]" value="<?php echo $option['product_option_id']; ?>" />
+												<?php if ($option['type'] == 'checkbox') {?>
+													<input type="hidden" name="order_product[<?php echo $product_row; ?>][order_option][<?php echo $option['product_option_id']; ?>][product_option_value_id][<?php echo $option['product_option_value_id'];?>]" value="<?php echo $option['value']; ?>" />
+												<?php } else {?>
+													<input type="hidden" name="order_product[<?php echo $product_row; ?>][order_option][<?php echo $option['product_option_id']; ?>][product_option_value_id]" value="<?php echo $option['product_option_value_id']; ?>" />
+												<?php }?>
+												<input type="hidden" name="order_product[<?php echo $product_row; ?>][order_option][<?php echo $option['product_option_id']; ?>][value]" value="<?php echo $option['value']; ?>" />
+												<input type="hidden" name="order_product[<?php echo $product_row; ?>][order_option][<?php echo $option['product_option_id']; ?>][type]" value="<?php echo $option['type']; ?>" />
+											<?php } ?>
+											<?php if (!empty($product['sns'])) { foreach ($product['sns'] as $product_sn) { ?>
+												<br />
+												&nbsp;<small> - SN: <?php echo $product_sn['sn']; ?></small>
+												<input type="hidden" name="order_product[<?php echo $product_row; ?>][product_sns][<?php echo $product_sn['product_sn_id']; ?>]" value="<?php echo $product_sn['product_sn_id']; ?>" />
+											<?php }}?>
+											<?php if ((int)$product['weight_price']) { ?>
+												<br />
+												&nbsp;<small> - <?php echo $product['weight_name']; ?>: <?php echo $product['weight']; ?></small>
+												<input type="hidden" name="order_product[<?php echo $product_row; ?>][weight_price]" value="<?php echo $product['weight_price']; ?>" />
+												<input type="hidden" name="order_product[<?php echo $product_row; ?>][weight]" value="<?php echo $product['weight']; ?>" />
+											<?php } ?>
+										</span>
+										<span class="highlight" onclick="changePrice(this)";><a id="price_anchor_<?php echo $product_row; ?>">@ <?php echo $product['price_text']; ?></a></span>
+									</td>
+									<td align="center" valign="middle" class="three">
+										<?php if (!empty($product['discount_type'])) { ?>
+											<span class="product-price">
+												<strike><?php echo $product['text_before_discount']; ?></strike><br/>
+												<small>(<?php echo $text_discount; ?>: <?php echo $product['text_discount']; ?>)</small><br/>
+												<?php echo $product['total_text']; ?>
+											</span>
+											<input type="hidden" name="order_product[<?php echo $product_row; ?>][product_total_text]" value="<?php echo $product['text_before_discount']; ?>" />
+										<?php } else {?>
+											<span class="product-price" id="total_text_only-<?php echo $product_row; ?>"><?php echo $product['total_text']; ?></span>
+											<input type="hidden" name="order_product[<?php echo $product_row; ?>][product_total_text]" value="<?php echo $product['total_text']; ?>" />
+										<?php }?>
+									</td>
+									<td align="center" valign="middle" class="four"><a class="delete" onclick="deleteOrderProduct(this)"></a></td>
+								</tr>
+
+								<input type="hidden" name="order_product[<?php echo $product_row; ?>][order_product_id]" value="<?php echo $product['order_product_id']; ?>" />
+								<input type="hidden" name="order_product[<?php echo $product_row; ?>][product_id]" value="<?php echo $product['product_id']; ?>" />
+								<input type="hidden" name="order_product[<?php echo $product_row; ?>][quantity]" value="<?php echo $product['quantity']; ?>" />
+								<input type="hidden" name="order_product[<?php echo $product_row; ?>][price]" value="<?php echo $product['price']; ?>" />
+								<input type="hidden" name="order_product[<?php echo $product_row; ?>][product_discount_type]" value="<?php echo $product['discount_type']; ?>" />
+								<input type="hidden" name="order_product[<?php echo $product_row; ?>][product_discount_value]" value="<?php echo $product['discount_value']; ?>" />
+							<?php $product_row++; } ?>
 							</tobdy>
 						</table>
 					</div>
@@ -147,9 +257,15 @@
 							<a class="pay-btn" onclick="makePayment();"><span><?php echo $text_pay; ?></span></a>
 						</div>
 						<div class="buttons-wrap">
+							<span id="order_only_buttons">
+							<a class="btn close-order" onclick="closeOrder();"><span class="icon"></span><?php echo $button_close_order; ?></a>
 							<a class="btn void" onclick="saveOrderStatus('<?php echo $void_status_id; ?>');"><span class="icon"></span><?php echo $button_void_order; ?></a>
 							<a class="btn park" onclick="saveOrderStatus('<?php echo $parking_status_id; ?>');"><span class="icon"></span><?php echo $button_park_order; ?></a>
+							<a class="btn discount" onclick="setDiscount();"><span class="icon"></span><?php echo $text_give_discount; ?></a>
+							<?php if (!empty($config['enable_auto_payment'])) { ?>
 							<a class="btn complete" onclick="completeOrder();"><span class="icon"></span><?php echo $button_complete_order; ?></a>
+							<?php }?>
+							</span>
 							<a class="btn print" onclick="printReceipt();"><span class="icon"></span><?php echo $text_print; ?></a>
 						</div>
 					</div>
@@ -157,15 +273,32 @@
 			</div>
 		</div>
 	</div>
+	
+	<!-- jzebra print -->
+	<?php if (!empty($config['enable_till_control'])) { ?>
+		<div id="jzebra_div" style="visibility: hidden; height: 0px;">
+			<applet name="jzebra" code="qz.PrintApplet.class" archive="view/template/pos/print/qz-print.jar" width="50px" height="50px">
+				<param name="jnlp_href" value="view/template/pos/print/qz-print_jnlp.jnlp">
+				<param name="printer" value="opencartPOS">
+				<param name="cache_option" value="plugin">
+				<param name="disable_logging" value="false">
+				<param name="initial_focus" value="false">
+			</applet>
+		</div>
+	<?php } ?>
+	<!-- openbay integration used div -->
+	<div id="hidden_div" style="display:none;"></div>
 	<!-- print message iframe -->
 	<iframe id="print_iframe" src="about:blank" style="display:none; width: 0; height: 0;"></iframe>
 	
 	<div style="display: none;"> <!-- start the hidden wrapper div to hide all dialogs when load -->
-	
 		<div id="order_list_dialog" class="fbox_cont order-list">
 			<h3><?php echo $text_order_list; ?></h3>
         	<div class="table-header">
+        		<label><input name="display_locked_orders" type="checkbox" value="0" class=""> <?php echo $text_display_locked_orders; ?></label> 
+				<?php if ($display_delete) { ?>
         		<a onclick="deleteOrder(this);" class="table-btn-delete"><span class="icon"></span><?php echo $button_delete; ?></a>
+				<?php } ?>
        		</div>
 			<div class="table-container">
 				<table width="100%" border="0" cellpadding="0" cellspacing="0" class="table_orderlist">
@@ -173,6 +306,9 @@
   						<tr>
                             <td class="one checkbox-head"><label class="radio_check"><input type="checkbox" onclick="$('input[name*=order_selected]').prop('checked', $(this).is(':checked'));" /> <span class="skip_content">Select All</span></label></td>
                             <td class="two"><?php echo $column_order_id; ?></td>
+							<?php if (isset($config['enable_table_management']) && (int)$config['enable_table_management']) {?>
+                            <td class="three"><?php echo $column_table_id; ?></td>
+							<?php } ?>
                             <td class="four"><?php echo $column_customer; ?></td>
                             <td class="five"><?php echo $column_status; ?></td>
                             <td class="six"><?php echo $column_order_total; ?></td>
@@ -185,9 +321,39 @@
   						<tr class="first-row">
                             <td class="one filter"><a class="skip_content filter_tab"><?php echo $button_filter; ?><span class="icon"></span></a></td>
                             <td class="two"><label class="skip_content"><?php echo $column_order_id; ?></label><input name="filter_order_id" type="text" value=""></td>
+							<?php if (isset($config['enable_table_management']) && (int)$config['enable_table_management']) {?>
+                            <td class="three">
+								<label class="skip_content"><?php echo $column_table_id; ?></label>
+								<select name="table_list">
+									<option value="0"></option>
+									<?php
+										if (!empty($tables)) {
+											foreach ($tables as $table) {
+									?>
+									<?php if (isset($filter_table_id) && $filter_table_id == $table['table_id']) { ?>
+										<option value="<?php echo $table['table_id']; ?>" selected="selected"><?php echo $table['name']; ?></option>
+									<?php } else { ?>
+										<option value="<?php echo $table['table_id']; ?>"><?php echo $table['name']; ?></option>
+									<?php } ?>
+									<?php
+											}
+										}
+									?>
+								</select>
+							</td>
+							<?php } ?>
                             <td class="four"><label class="skip_content"><?php echo $column_customer; ?></label><input name="filter_customer" type="text" class="auto_complete"></td>
                             <td class="five">
                             	<label class="skip_content"><?php echo $column_status; ?></label>
+								<?php if ($text_work_mode == '2') {?>
+								<select name="filter_quote_status_id">
+									<option value="*"></option>
+									<option value="0"><?php echo $text_missing; ?></option>
+									<?php foreach ($quote_statuses as $quote_status_top) { ?>
+									<option value="<?php echo $quote_status_top['quote_status_id']; ?>"><?php echo $quote_status_top['name']; ?></option>
+									<?php } ?>
+								</select>
+								<?php } else { ?>
 								<select name="filter_order_status_id">
 									<option value="*"></option>
 									<option value="0"><?php echo $text_missing; ?></option>
@@ -195,6 +361,7 @@
 									<option value="<?php echo $order_status_top['order_status_id']; ?>"><?php echo $order_status_top['name']; ?></option>
 									<?php } ?>
 								</select>
+								<?php } ?>
                             </td>
                             <td class="six"><label class="skip_content"><?php echo $column_order_total; ?></label><input name="filter_total" type="text"></td>
                             <td class="seven"><label class="skip_content"><?php echo $column_date_added; ?></label><input name="filter_date_added" type="text" class="date"></td>
@@ -213,6 +380,177 @@
 			<h3><?php echo $text_change_order_status; ?></h3>
 			<div class="table-container"><ul class="order_status_list"></ul></div>
 		</div>
+		
+		<!-- for shipping dialog popups, prepare the div --->
+		<div id="order_shipping_dialog" class="fbox_cont shipping">
+			<h3><?php echo $text_change_shipping; ?></h3>
+			<div id="order_addresses" class="table-container form-box">
+				<div class="shipping_top">
+					<ul class="form_list">
+						<li>
+							<label><?php echo $entry_shipping_method; ?> <em>*</em></label>
+							<div class="inputbox">
+								<select name="shipping">
+									<option value="0" selected="selected"><?php echo $text_none; ?></option>
+									<?php if (!empty($customer_addresses)) { foreach ($customer_addresses as $customer_address) { ?>
+										<option value="<?php echo $customer_address['address_id']; ?>"><?php echo $customer_address['firstname'] . ' ' . $customer_address['lastname'] . ', ' . $customer_address['address_1'] . ', ' . $customer_address['city'] . ', ' . $customer_address['country']; ?></option>
+									<?php } } ?>
+								</select> 
+							</div>
+						</li>
+					</ul>
+				</div>
+				<div class="shipping_l">
+					<h4><?php echo $text_order_shipping_address; ?></h4>
+					<ul class="form_list">
+						<li>
+							<label><?php echo $entry_order_address; ?></label>
+							<div class="inputbox">
+								<select name="shipping_address">
+									<option value="0" selected="selected"><?php echo $text_none; ?></option>
+									<?php if (!empty($customer_addresses)) { foreach ($customer_addresses as $customer_address) { ?>
+										<option value="<?php echo $customer_address['address_id']; ?>"><?php echo $customer_address['firstname'] . ' ' . $customer_address['lastname'] . ', ' . $customer_address['address_1'] . ', ' . $customer_address['city'] . ', ' . $customer_address['country']; ?></option>
+									<?php } } ?>
+								</select> 
+							</div>
+						</li>
+						<li>
+							<label><?php echo $entry_firstname; ?> <em>*</em></label>
+							<div class="inputbox"><input name="shipping_firstname" type="text" value="<?php echo $shipping_firstname; ?>"> </div>
+						</li>
+						<li>
+							<label><?php echo $entry_lastname; ?> <em>*</em></label>
+							<div class="inputbox"><input name="shipping_lastname" type="text" value="<?php echo $shipping_lastname; ?>"></div> 
+						</li>
+						<li>
+							<label><?php echo $entry_company; ?></label>
+							<div class="inputbox"><input name="shipping_company" type="text" value="<?php echo $shipping_company; ?>"></div>
+						</li>
+						<li>
+							<label><?php echo $entry_address_1; ?> <em>*</em></label>
+							<div class="inputbox"><input name="shipping_address_1" type="text" value="<?php echo $shipping_address_1; ?>"></div>
+						</li>
+						<li>
+							<label><?php echo $entry_address_2; ?></label>
+							<div class="inputbox"><input name="shipping_address_2" type="text" value="<?php echo $shipping_address_2; ?>"></div>
+						</li>
+						<li>
+							<label><?php echo $entry_city; ?> <em>*</em></label>
+							<div class="inputbox"><input name="shipping_city" type="text" value="<?php echo $shipping_city; ?>"></div>
+						</li>
+						<li>
+							<label><?php echo $entry_postcode; ?> <em>*</em></label>
+							<div class="inputbox"><input name="shipping_postcode" type="text" value="<?php echo $shipping_postcode; ?>"></div>
+						</li>
+						<li>
+							<label><?php echo $entry_country; ?> <em>*</em></label>
+							<div class="inputbox">
+								<select name="shipping_country_id" onchange="order_country(this, 'shipping', '<?php echo $shipping_zone_id; ?>');">
+									<option value=""><?php echo $text_select; ?></option>
+									<?php foreach ($customer_countries as $customer_country) {
+											if ($customer_country['country_id'] == $shipping_country_id) { ?>
+												<option value="<?php echo $customer_country['country_id']; ?>" selected="selected"><?php echo $customer_country['name']; ?></option>
+									<?php } else { ?>
+												<option value="<?php echo $customer_country['country_id']; ?>"><?php echo $customer_country['name']; ?></option>
+									<?php } } ?>
+								</select> 
+							</div>
+						</li>
+						<li>
+							<label><?php echo $entry_zone; ?> <em>*</em></label>
+							<div class="inputbox">
+								<select name="shipping_zone_id">
+									<option value=""><?php echo $text_select; ?></option>
+									<?php if (!empty($zones[$shipping_country_id])) { foreach ($zones[$shipping_country_id] as $zone) {
+											if ($zone['zone_id'] == $shipping_zone_id) { ?>
+												<option value="<?php echo $zone['zone_id']; ?>" selected="selected"><?php echo $zone['name']; ?></option>
+									<?php } else { ?>
+												<option value="<?php echo $zone['zone_id']; ?>"><?php echo $zone['name']; ?></option>
+									<?php } } } ?>
+								</select> 
+							</div>
+						</li>
+					</ul>
+				</div>
+				<div class="shipping_r">
+					<h4><?php echo $text_order_payment_address; ?></h4>
+					<ul class="form_list">
+						<li>
+							<label><?php echo $entry_order_address; ?></label>
+							<div class="inputbox">
+								<select name="payment_address">
+									<option value="0" selected="selected"><?php echo $text_none; ?></option>
+									<?php if (!empty($customer_addresses)) { foreach ($customer_addresses as $customer_address) { ?>
+										<option value="<?php echo $customer_address['address_id']; ?>"><?php echo $customer_address['firstname'] . ' ' . $customer_address['lastname'] . ', ' . $customer_address['address_1'] . ', ' . $customer_address['city'] . ', ' . $customer_address['country']; ?></option>
+									<?php } } ?>
+								</select> 
+							</div>
+						</li>
+						<li>
+							<label><?php echo $entry_firstname; ?> <em>*</em></label>
+							<div class="inputbox"><input name="payment_firstname" type="text" value="<?php echo $payment_firstname; ?>"> </div>
+						</li>
+						<li>
+							<label><?php echo $entry_lastname; ?> <em>*</em></label>
+							<div class="inputbox"><input name="payment_lastname" type="text" value="<?php echo $payment_lastname; ?>"></div> 
+						</li>
+						<li>
+							<label><?php echo $entry_company; ?></label>
+							<div class="inputbox"><input name="payment_company" type="text" value="<?php echo $payment_company; ?>"></div>
+						</li>
+						<li>
+							<label><?php echo $entry_address_1; ?> <em>*</em></label>
+							<div class="inputbox"><input name="payment_address_1" type="text" value="<?php echo $payment_address_1; ?>"></div>
+						</li>
+						<li>
+							<label><?php echo $entry_address_2; ?></label>
+							<div class="inputbox"><input name="payment_address_2" type="text" value="<?php echo $payment_address_2; ?>"></div>
+						</li>
+						<li>
+							<label><?php echo $entry_city; ?> <em>*</em></label>
+							<div class="inputbox"><input name="payment_city" type="text" value="<?php echo $payment_city; ?>"></div>
+						</li>
+						<li>
+							<label><?php echo $entry_postcode; ?> <em>*</em></label>
+							<div class="inputbox"><input name="payment_postcode" type="text" value="<?php echo $payment_postcode; ?>"></div>
+						</li>
+						<li>
+							<label><?php echo $entry_country; ?> <em>*</em></label>
+							<div class="inputbox">
+								<select name="payment_country_id" onchange="order_country(this, 'payment', '<?php echo $payment_zone_id; ?>');">
+									<option value=""><?php echo $text_select; ?></option>
+									<?php foreach ($customer_countries as $customer_country) {
+											if ($customer_country['country_id'] == $payment_country_id) { ?>
+												<option value="<?php echo $customer_country['country_id']; ?>" selected="selected"><?php echo $customer_country['name']; ?></option>
+									<?php } else { ?>
+												<option value="<?php echo $customer_country['country_id']; ?>"><?php echo $customer_country['name']; ?></option>
+									<?php } } ?>
+								</select>
+							</div>
+						</li>
+						<li>
+							<label><?php echo $entry_zone; ?> <em>*</em></label>
+							<div class="inputbox">
+								<select name="payment_zone_id">
+									<option value=""><?php echo $text_select; ?></option>
+									<?php if (!empty($zones[$payment_country_id])) { foreach ($zones[$payment_country_id] as $zone) {
+											if ($zone['zone_id'] == $payment_zone_id) { ?>
+												<option value="<?php echo $zone['zone_id']; ?>" selected="selected"><?php echo $zone['name']; ?></option>
+									<?php } else { ?>
+												<option value="<?php echo $zone['zone_id']; ?>"><?php echo $zone['name']; ?></option>
+									<?php } } } ?>
+								</select>
+							</div>
+						</li>
+					</ul>
+				</div>
+			</div>
+            <div class="fbox_btn_wrap">
+				<a onclick="saveShippingDetails();" class="table-btn-common"><?php echo $button_save; ?></a>
+            </div>            
+		</div>
+		
+		<!-- for customer dialog popup, prepare the div -->
 		<div id="customer_dialog" class="fbox_cont change_add_details">
 			<h3><?php echo $text_change_customer; ?></h3>
             <div class="fbox_btn_wrap margin_b_6">
@@ -235,6 +573,10 @@
                     <div class="tab-content">
                         <div class="tab-pane" id="tab_customer_general">
                             <ul class="form_list">
+								<li>
+									<label><?php echo $entry_card_number; ?></label>
+									<div class="inputbox"><input name="customer_card_number" type="text" value="<?php echo empty($customer_card_number) ? '' : $customer_card_number; ?>"></div>
+								</li>
 								<li>
 									<label><?php echo $entry_firstname; ?> <em>*</em></label>
 									<div class="inputbox"><input name="customer_firstname" type="text" value="<?php echo empty($customer_id) ? $firstname : $customer_firstname; ?>"></div>
@@ -503,6 +845,72 @@
         	</div><!--table-container-->
 		</div>
 		
+		<!-- prepare quantity dialog -->
+		<div id="quantity_dialog" class="fbox_cont quantity">
+			<h3><?php echo $text_change_quantity; ?></h3>
+			<div class="table-container">
+				<?php $pad_keys = array('1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', 'C'); ?>
+				<input type="hidden" name="org_quantity" value="" />
+				<input type="hidden" name="quantity_index" value="" />
+         		<div class="keypad_wrap" id="quantity_pad">
+                	<input name="changed_quantity" type="text" class="display"> 
+					<?php foreach ($pad_keys as $pad_key) {?>
+                    <a class="btn"><?php echo $pad_key; ?></a>
+					<?php }?>
+                    <a class="btn ok">OK</a>
+                </div><!--keypad_wrap-->
+			</div>                             
+		</div>
+		
+		<!-- prepare price dialog -->
+		<div id="price_discount_dialog" class="fbox_cont price_discount">
+			<h3><?php echo $text_change_price; ?></h3>
+			<input type="hidden" name="org_price" value="" />
+			<input type="hidden" name="price_index" value="" />
+			<div class="table-container">
+            	<div class="price_left">
+                	<ul class="form_list price_options">
+                        <li>
+                            <div class="inputbox"><label class="radio_check"><input type="radio" class="price_disc_radio" value="change_price" name="use_discount" checked="true"> <?php echo $text_change_price; ?></label></div>
+                        </li>  
+                        <li>
+                            <div class="inputbox"><label class="radio_check"><input type="radio" class="price_disc_radio" value="use_discount" name="use_discount"> <?php echo $text_use_discount; ?></label></div>
+                        </li>             
+                    </ul>
+                    <div class="discount_form">
+                    	<ul class="form_list">                         
+                            <li>
+                                <div class="inputbox"><label class="radio_check"><input type="radio" class="" value="fixed" name="use_discount_type" checked="true" disabled="true"> <?php echo $text_discount_type_amount; ?></label></div>
+                            </li>  
+                            <li>
+                                <label class="big"><?php echo $currency_symbol; ?></label>
+                                <div class="inputbox"><input name="changed_price_discount_fixed" type="text" value=""></div>
+                            </li> 
+                            <li>
+                                <div class="inputbox"><label class="radio_check"><input type="radio" class="" value="percentage" name="use_discount_type" disabled="true"> <?php echo $text_discount_type_percentage; ?></label></div>
+                            </li> 
+                            <li>
+                                <label class="big">%</label>
+                                <div class="inputbox"><input name="changed_price_discount_percentage" type="text" value="" ></div>
+                            </li>             
+                        </ul>
+                        <div class="mask"></div><!-- Hide this when active -->
+                    </div>	
+                </div><!--price_left-->
+         		<div class="price_right">
+              		<div class="keypad_wrap" id="price_pad">
+                        <input name="changed_price" type="text" class="display" value="0.00"> 
+						<?php $pad_keys = array('1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', 'C'); ?>
+						<?php foreach ($pad_keys as $pad_key) {?>
+						<a class="btn"><?php echo $pad_key; ?></a>
+						<?php }?>
+						<a class="btn ok" id="button_ok">OK</a>
+						<a class="btn ok" id="button_discount_apply"><?php echo $button_discount; ?></a>
+                    </div><!--keypad_wrap-->                    
+                </div><!--price_right-->
+			</div>
+		</div>
+		
 		<!-- prepare for totals section -->
 		<div id="totals_details_dialog" class="fbox_cont totals">
 			<h3><?php echo $text_show_totals; ?></h3>
@@ -531,6 +939,22 @@
 		<!-- prepare for payment dialog -->
 		<div id="order_payments_dialog" class="fbox_cont payment">
 			<h3><?php echo $text_make_payment; ?></h3>
+			<div class="table-container form-box" id="return_action_div">
+				<table width="100%" border="0" cellspacing="0" cellpadding="0" class="">
+					<tr class="first-row">
+						<td class=""><?php echo $entry_return_action; ?></label>
+						<td class="">
+							<select name="return_action_id">
+								<option value="0"></option>
+								<?php if (!empty($return_actions)) { foreach ($return_actions as $return_action) { ?>
+								<option value="<?php echo $return_action['return_action_id']; ?>"><?php echo $return_action['name']; ?></option>
+								<?php }} ?>
+							</select>
+						</td>
+						<td id="show_order_payments_td" class=""><a class="table-btn"><?php echo $text_order_payment_details; ?></a></div>
+					</tr>
+				</table>
+			</div>
 			<div class="table-container" id="payment_action_div">
             	<div class="payment_l">
                 	<div class="payment_head">
@@ -597,13 +1021,71 @@
                         </tbody>                    
                     </table>  
                 </div><!--payment_l-->
+         		<div class="payment_r">
+                	<!-- Make this div visible when cash type is selected --->
+                	<div id="cash_type_list" class="payment_r_cont payment_cash" style="display:block;">
+                        <div class="cash_head">
+                            <ul class="form_list">
+                                <li>
+                                    <label><?php echo $text_accelerate; ?>:</label>
+                                    <div class="inputbox">
+                                        <label><input name="bx5" type="checkbox" value="5" class=""> <span class="txt">x 5</span></label>
+                                        <label><input name="bx10" type="checkbox" value="10" class=""> <span class="txt">x 10</span></label>
+                                    </div>
+                                </li>                    
+                            </ul>
+                        </div>
+                        <div class="currency_wrap">
+							<?php if (!empty($cash_types)) { foreach ($cash_types as $cash_type_values) { foreach ($cash_type_values as $cash_type_value) { ?>
+								<a onclick="getPaymentCash('<?php echo $cash_type_value['value']; ?>', '<?php echo $cash_type_value['display']; ?>')" class="currency">
+									<img src="<?php echo $cash_type_value['image']; ?>" alt="$100">
+									<span class="txt"><?php echo $cash_type_value['display']; ?></span>
+								</a>
+							<?php }}} ?>
+                        </div>
+                  	</div>
+                    
+					<!-- add for loyalty customer card begin -->
+					<div id="reward_points_payment" style="display: none;">
+						<h4 id="reward_points_balance"></h4>
+						<div class="table-container">
+							<table width="100%" border="0" cellpadding="0" cellspacing="0" class="">
+								<thead>
+									<tr>
+										<td class="text-left"><?php echo $column_product_in_order; ?></td>
+										<td class="text-left"><?php echo $column_points; ?></td>
+										<td class="text-left"><?php echo $column_rewarded_qty; ?></td>
+										<td class="text-left"><?php echo $column_pay_with_points; ?></td>
+									</tr>
+								</thead>
+								<tbody id="reward_points_payment_list"></tbody>
+							</table>
+						</div>
+					</div>
+					<!-- add for loyalty customer card end -->
+					<!-- for all other cases, use keypad to input payment amount -->
+                    <div class="keypad_wrap payment_other" style="display:none;">
+						<div class="keypad_wrap" id="payment_pad">
+							<!-- <input name="changed_payment" type="text" class="display"> -->
+							<?php foreach ($pad_keys as $pad_key) {?>
+							<a class="btn"><?php echo $pad_key; ?></a>
+							<?php }?>
+							<a class="btn ok">OK</a>
+						</div><!--keypad_wrap-->
+                    </div><!--keypad_wrap-->
+                    
+                </div><!--payment_r-->
 			</div>  
             <div class="fbox_btn_wrap">
 				<span id="post_payment_action_div">
 					<?php if (!empty($order_payment_post_status)) { foreach ($order_payment_post_status as $post_order_status_id => $post_order_status_name) { ?>
 					<a id="button_order_action_<?php echo $post_order_status_id; ?>" class="table-btn-common" onclick="postPayment(<?php echo $post_order_status_id; ?>);"><?php echo $post_order_status_name; ?></a>
 					<?php } } ?>
+					<?php if (!empty($return_statuses)) { foreach ($return_statuses as $return_status) { ?>
+					<a id="button_return_action_<?php echo $return_status['return_status_id']; ?>" class="table-btn-common" onclick="postPayment(<?php echo $return_status['return_status_id']; ?>);"><?php echo $return_status['name']; ?></a>
+					<?php } } ?>
 				</span>
+				<a id="button_email_receipt" onclick="emailReceipt();" class="table-btn-common email"><span class="icon"></span> <?php echo $text_email_receipt; ?></a>
             </div>                       
 		</div>
 		
@@ -621,10 +1103,59 @@
 			<input type="hidden" name="quantity" value="1" />
 			<input type="hidden" name="product_sn_id" value="" />
 			<input type="hidden" name="product_image" value="" />
+			<input type="hidden" name="product_reward_points" value="" />
 			<div id="option"></div>
-			<a id="button_product">add</a>
+			<a id="button_product"><?php echo $button_add_product; ?></a>
 		</div>
-	
+		
+		<!-- prepare dialog for quick sale -->
+		<div id="quick_sale_dialog" class="fbox_cont quick_sale">
+			<h3><?php echo $text_title_quick_sale; ?></h3>
+			<div class="table-container form-box">
+				<h4><?php echo $text_quick_sale; ?></h4>
+				<ul class="form_list">
+                	<li>
+                        <label><?php echo $entry_quick_sale_name; ?> <em>*</em></label>
+                        <div class="inputbox"><input name="quick_sale_name" type="text" value=""><input type="hidden" name="quick_sale_product_id" value="0" /></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_quick_sale_model; ?></label>
+                        <div class="inputbox"><input name="quick_sale_model" type="text" value=""></div>
+                    </li>
+                	<li>
+                        <label>&nbsp;</label>
+                        <div class="inputbox"><label class="radio_check"><input name="quick_sale_shipping" type="checkbox" value="0"> <?php echo $text_quick_sale_shipping; ?></label></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_quick_sale_price; ?> <em>*</em></label>
+                        <div class="inputbox"><input name="quick_sale_price" type="text" value=""></div>
+                    </li>
+                	<li>
+                    	<label><?php echo $entry_quick_sale_tax; ?></label>
+                        <div class="inputbox">
+                            <select name="quick_sale_tax_class_id">
+								<option value="0"><?php echo $text_none; ?></option>
+								<?php foreach ($tax_classes as $tax_class) { ?>
+								<option value="<?php echo $tax_class['tax_class_id']; ?>"><?php echo $tax_class['title']; ?></option>
+								<?php } ?>
+                            </select> 
+                        </div>
+                    </li>
+                	<li>
+                        <label>&nbsp;</label>
+                        <div class="inputbox"><label class="radio_check"><input name="quick_sale_include_tax" type="checkbox" value="" disabled="disabled"><?php echo $text_quick_sale_include_tax; ?></label></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_quantity; ?> <em>*</em></label>
+                        <div class="inputbox"><input name="quick_sale_quantity" type="text" value="1"></div>
+                    </li>
+				</ul>
+			</div>
+            <div class="fbox_btn_wrap">
+				<a id="button_quick_sale" class="table-btn-common"><?php echo $button_add_product; ?></a>
+            </div>            
+		</div>
+		
 		<!-- prepare for search settings section -->
 		<div id="search_settings_dialog" class="fbox_cont search_scope">
 			<h3><?php echo $text_search_scope; ?></h3>
@@ -644,23 +1175,36 @@
 				<a onclick="setSearchScope();" class="table-btn-common"><?php echo $button_set_scope; ?></a>
             </div>                     
 		</div>
-		<!-- prepare quantity dialog -->
-		<div id="quantity_dialog" class="fbox_cont quantity">
-			<h3><?php echo $text_change_quantity; ?></h3>
+		
+		<!-- prepare for search settings section -->
+		<div id="shortcuts_dialog" class="fbox_cont shortcuts">
+			<h3><?php echo $text_title_more_shortcuts; ?></h3>
 			<div class="table-container">
-				<?php $pad_keys = array('1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', 'C'); ?>
-				<input type="hidden" name="org_quantity" value="" />
-				<input type="hidden" name="quantity_index" value="" />
-         		<div class="keypad_wrap" id="quantity_pad">
-                	<input name="changed_quantity" type="text" class="display"> 
-					<?php foreach ($pad_keys as $pad_key) {?>
-                    <a class="btn"><?php echo $pad_key; ?></a>
-					<?php }?>
-                    <a class="btn ok">OK</a>
-                </div><!--keypad_wrap-->
-			</div>                             
+				<ul class="shortcuts_list"></ul>
+			</div>
 		</div>
-	
+		
+		<!-- for order status dialog popups, prepare the div for dialogs -->
+		<div id="pos_table_dialog" class="fbox_cont order-status">
+			<h3><?php echo $text_table; ?></h3>
+			<div class="table-container">
+				<ul class="order_status_list">
+			<?php
+				if (!empty($tables)) {
+					foreach ($tables as $table) {
+						if ($table['table_id'] == $order_table_id) {
+			?>
+					<li><a onclick="changeTable(<?php echo $table['table_id']; ?>);" class="table-btn-order-status selected"><span class="icon"></span><?php echo $table['name']; ?><input type="hidden" value="<?php echo $table['table_id']; ?>"></a></li>
+			<?php 		} else { ?>
+					<li><a onclick="changeTable(<?php echo $table['table_id']; ?>);" class="table-btn-order-status"><?php echo $table['name']; ?><input type="hidden" value="<?php echo $table['table_id']; ?>"></a></li>
+			<?php		}
+					}
+				}
+			?>
+				</ul>
+			</div>
+		</div>
+		
 		<!-- prepare dialog for order comment -->
 		<div id="order_comment_dialog" class="fbox_cont comment">
 			<h3><?php echo $text_order_comment; ?></h3>
@@ -674,6 +1218,259 @@
             <div class="fbox_btn_wrap">
 				<a onclick="saveOrderComment();" class="table-btn-common"><?php echo $button_save; ?></a>
             </div>            
+		</div>
+		
+		<!-- prepare dialog for cash in and out -->
+		<div id="cash_in_out_dialog" class="fbox_cont cash_in_out">
+			<h3></h3>
+			<div class="table-container">
+            	<div class="cash_left">
+                	<ul class="form_list">                
+                        <li>
+                            <label><?php echo $column_payment_amount; ?>:</label>
+                            <div class="inputbox enter_amount">
+                            	<input name="cash_in_out_amount" type="text" class="" value="0"> 
+                            	<a class="clear clear_input"></a>
+                                <!--<span class="notes">$100 x 5</span>-->
+                            </div>
+                        </li>                                           
+               		</ul>                   	
+                </div><!--cash_left-->
+         		<div class="cash_right">
+              		<div class="cash_head">
+                    	<ul class="form_list">                
+                            <li>
+                                <label><?php echo $text_accelerate; ?>:</label>
+                                <div class="inputbox">
+                                	<label><input name="ax5" type="checkbox" value="5" class=""> <span class="txt">x 5</span></label>
+                                    <label><input name="ax10" type="checkbox" value="10" class=""> <span class="txt">x 10</span></label>
+                                </div>
+                            </li>                    
+                        </ul>
+                    </div>
+                	
+                    <div class="currency_wrap">
+						<?php if (!empty($cash_types)) { foreach ($cash_types as $cash_type_values) { foreach ($cash_type_values as $cash_type_value) { ?>
+							<a onclick="getCash('<?php echo $cash_type_value['value']; ?>', '<?php echo $cash_type_value['display']; ?>')" class="currency">
+								<img src="<?php echo $cash_type_value['image']; ?>" alt="$100">
+								<span class="txt"><?php echo $cash_type_value['display']; ?></span>
+							</a>
+						<?php }}} ?>
+                    </div>
+                    
+                </div><!--cash_right-->
+                <div class="cash_left">
+                	<ul class="form_list">                
+                        <li>
+                            <label><?php echo $column_payment_note; ?>:</label>
+                            <div class="inputbox"><textarea name="cash_in_out_comment"></textarea></div>
+                      	</li>                    
+               		</ul>
+                   	<div class="fbox_btn_wrap">
+                        <a id="button_cash_in" onclick="cashInOut('cash_in');" class="table-btn-common cash cash_in"><span class="icon"></span> <?php echo $text_cash_in; ?></a>
+                        <a id="button_cash_out" onclick="cashInOut('cash_out');" class="table-btn-common cash cash_out"><span class="icon"></span> <?php echo $text_cash_out; ?></a>
+                    </div> 
+                </div><!--cash_left-->
+			</div>                       
+		</div>
+		
+		<!-- prepare dialog for emailing receipt -->
+		<div id="email_receipt_dialog" class="fbox_cont email_receipt">
+			<h3><?php echo $text_email_receipt; ?></h3>
+			<div class="table-container form-box">
+				<ul class="form_list">
+                	<li>
+                        <label><?php echo $entry_receipt_email; ?></label>
+                        <div class="inputbox">
+							<input name="receipt_email" type="text" value="<?php echo $email; ?>">
+							<input type="hidden" name="post_order_id" value="" />
+							<input type="hidden" name="post_pos_return_id" value="" />
+						</div>
+                    </li>
+				</ul>
+			</div>
+			<div class="fbox_btn_wrap">
+				<a onclick="sendReceiptEmail();" class="table-btn-common email"><span class="icon"></span> <?php echo $text_email_receipt; ?></a>
+			</div>
+		</div>
+		
+		<!-- for return list dialog popups, prepare the div for dialogs -->
+		<div id="return_list_dialog" class="fbox_cont order-list">
+			<h3><?php echo $text_return_list; ?></h3>
+        	<div class="table-header">
+				<?php if ($display_delete) { ?>
+        		<a onclick="deleteReturn(this);" class="table-btn-delete"><span class="icon"></span><?php echo $button_delete; ?></a>
+				<?php } ?>
+       		</div>
+			<div class="table-container">
+				<table width="100%" border="0" cellpadding="0" cellspacing="0" class="table_orderlist">
+        			<thead>
+  						<tr>
+                            <td class="one checkbox-head"><label class="radio_check"><input type="checkbox" onclick="$('input[name*=return_selected]').prop('checked', $(this).is(':checked'));" /> <span class="skip_content">Select All</span></label></td>
+                            <td class="two"><?php echo $column_pos_return_id; ?></td>
+                            <td class="four"><?php echo $column_customer; ?></td>
+                            <td class="five"><?php echo $column_status; ?></td>
+                            <td class="six"><?php echo $column_return_total; ?></td>
+                            <td class="seven"><?php echo $column_date_added; ?></td>
+                            <td class="eight"><?php echo $column_date_modified; ?></td>
+                            <td class="nine"><?php echo $column_action; ?></td>
+                 		</tr>
+                  	</thead>
+                    <tbody>
+  						<tr class="first-row">
+                            <td class="one filter"><a class="skip_content filter_tab"><?php echo $button_filter; ?><span class="icon"></span></a></td>
+                            <td class="two"><label class="skip_content"><?php echo $column_pos_return_id; ?></label><input name="filter_pos_return_id" type="text" value=""></td>
+                            <td class="four"><label class="skip_content"><?php echo $column_customer; ?></label><input name="filter_return_customer" type="text" class="auto_complete"></td>
+                            <td class="five">
+                            	<label class="skip_content"><?php echo $column_status; ?></label>
+								<select name="filter_return_status_id">
+									<option value="*"></option>
+									<?php foreach ($return_statuses as $return_status) { ?>
+									<option value="<?php echo $return_status['return_status_id']; ?>"><?php echo $return_status['name']; ?></option>
+									<?php } ?>
+								</select>
+                            </td>
+                            <td class="six"><label class="skip_content"><?php echo $column_return_total; ?></label><input name="filter_return_total" type="text"></td>
+                            <td class="seven"><label class="skip_content"><?php echo $column_date_added; ?></label><input name="filter_return_date_added" type="text" class="date"></td>
+                            <td class="eight"><label class="skip_content"><?php echo $column_action; ?></label><input name="filter_return_date_modified" type="text" class="date"></td>
+                            <td class="nine"><label class="skip_content">&nbsp;</label><a id="button_return_filter" onclick="filterReturn();" class="table-btn table-btn-filter"><span class="icon filter"></span> <?php echo $button_filter; ?></a></td>
+                   		</tr>
+					</tbody>
+					<tbody id="return_list_returns"></tbody>
+				</table>
+			</div>
+			<div id="return_list_pagination" class="table-pagination"></div>
+		</div>
+		
+		<div id="return_dialog" class="fbox_cont return_dialog">
+			<h3><?php echo $text_return_add; ?></h3>
+			<div class="table-container form-box">
+				<ul class="form_list">
+                	<li>
+                        <label><?php echo $column_product_name; ?>:</label>
+                        <div class="inputbox"><input id="return_product_name" value="" readonly /></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_model; ?></label>
+                        <div class="inputbox"><input id="return_product_model" value="" readonly /></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_options; ?></label>
+                        <div class="inputbox" id="return_product_options"></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_quantity; ?></label>
+                        <div class="inputbox"><input name="return_quantity" type="text" value="1" /></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_opened; ?></label>
+                        <div class="inputbox">
+							<select name="return_opened">
+								<option value="0"><?php echo $text_unopened; ?></option>
+								<option value="1"><?php echo $text_opened; ?></option>
+							</select>
+						</div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_return_reason; ?></label>
+                        <div class="inputbox">
+							<select name="return_reason_id">
+								<?php if (!empty($return_reasons)) { foreach ($return_reasons as $return_reason) { ?>
+								<option value="<?php echo $return_reason['return_reason_id']; ?>"><?php echo $return_reason['name']; ?></option>
+								<?php }} ?>
+							</select>
+						</div>
+                    </li>
+                	<li>
+                        <label><?php echo $column_payment_note; ?>:</label>
+                        <div class="inputbox">
+							<textarea name="return_comment"></textarea>
+							<input type="hidden" name="return_order_product_id" value="" /><input type="hidden" name="return_product_id" value="" />
+						</div>
+                    </li>
+				</ul>
+			</div>
+			<div class="fbox_btn_wrap">
+				<a id="button_return" class="table-btn-common"><?php echo $button_return_product; ?></a>
+			</div>
+		</div>
+		
+		<div id="return_details_dialog" class="fbox_cont return_details">
+			<h3><?php echo $text_return_details_title; ?></h3>
+			<div class="table-container form-box" id="return_details">
+				<ul class="form_list">
+                	<li>
+                        <label><?php echo $column_product_name; ?>:</label>
+                        <div class="inputbox"><input type="text" id="return_details_product_name" value="" readonly></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_model; ?></label>
+                        <div class="inputbox"><input type="text" id="return_details_product_model" value="" readonly></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_options; ?></label>
+                        <div class="inputbox"><textarea id="return_details_product_options" readonly></textarea></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_quantity; ?></label>
+                        <div class="inputbox"><input type="text" id="return_details_product_quantity" value="" readonly></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_opened; ?></label>
+                        <div class="inputbox"><input type="text" id="return_details_product_opened" value="" readonly></div>
+                    </li>
+                	<li>
+                        <label><?php echo $entry_return_reason; ?></label>
+                        <div class="inputbox"><input type="text" id="return_details_return_reason" value="" readonly></div>
+                    </li>
+                	<li>
+                        <label><?php echo $column_payment_note; ?>:</label>
+                        <div class="inputbox"><input type="text" id="return_details_comment" value="" readonly></div>
+                    </li>
+                	<li>
+                        <label><?php echo $column_return_time; ?>:</label>
+                        <div class="inputbox"><input type="text" id="return_details_return_time" value="" readonly></div>
+                    </li>
+				</ul>
+			</div>
+		</div>
+		
+		<!-- order payment details dialog, to be used in return mode to use the paid info as references -->
+		<div id="order_payments_details_dialog" class="fbox_cont order_payment_details">
+			<h3><?php echo $text_order_payment_details; ?></h3>
+			<div class="table-container">
+				<table width="100%" border="0" cellpadding="0" cellspacing="0" class="">
+					<thead id="reward_points_payment_header">
+						<tr>
+							<td class="text-left"><?php echo $column_payment_type; ?></td>
+							<td class="text-left"><?php echo $column_payment_amount; ?></td>
+							<td class="text-left"><?php echo $column_payment_note; ?></td>
+							<td class="text-left"><?php echo $column_payment_time; ?></td>
+						</tr>
+					</thead>
+					<tbody id="details_payment_list"></tbody>
+				</table>
+			</div>
+		</div>
+		
+		<!-- existing return products -->
+		<div id="existing_returns_dialog" class="fbox_cont existing_returns">
+			<h3><?php echo $text_existing_returns; ?></h3>
+			<div class="table-container">
+				<table width="100%" border="0" cellpadding="0" cellspacing="0" class="">
+					<thead>
+						<tr>
+							<td class="text-left"><?php echo $column_return_product; ?></td>
+							<td class="text-left"><?php echo $column_return_customer; ?></td>
+							<td class="text-left"><?php echo $column_return_email; ?></td>
+							<td class="text-left"><?php echo $column_return_quantity; ?></td>
+							<td class="text-left"><?php echo $column_return_comment; ?></td>
+							<td class="text-left"><?php echo $column_return_time; ?></td>
+						</tr>
+					</thead>
+					<tbody id="existing_returns_list"></tbody>
+				</table>
+			</div>
 		</div>
 
 		</div> <!-- end for the hidden wrapper for all dialogs -->
@@ -692,9 +1489,16 @@
 </div>
 
 <script type="text/javascript" src="view/javascript/jquery/ui/jquery-ui.min.js"></script>
+
+<script type="text/javascript" src="view/javascript/pos/jquery.ui.touch-punch.min.js"></script>
+<script type="text/javascript" src="view/javascript/pos/barcode.min.js"></script>
 <script type="text/javascript" src="view/javascript/pos/pos_vars.js"></script>
+<script type="text/javascript" src="view/javascript/pos/pouchdb-3.3.1.min.js"></script>
+<script type="text/javascript" src="view/javascript/pos/pouchdb.gql.js"></script>
 <script type="text/javascript">
 	var token = '<?php echo $token; ?>';
+	order_id = '<?php echo $order_id; ?>';
+	config = <?php echo json_encode($config); ?>;
 </script>
 <script type="text/javascript" src="view/javascript/pos/pos_backend.js"></script>
 <script type="text/javascript" src="view/javascript/pos/jquery.fancybox.pack.js"></script>
