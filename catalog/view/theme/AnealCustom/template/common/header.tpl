@@ -143,9 +143,9 @@ if($homepage==$currentpage || $homepage2==$currentpage || $homepage3==$currentpa
         <li>
           <a href="http://www.homerecsupply.com/index.php?route=information/information&information_id=6">Billiard Services</a>
         </li>
-        <li>
+<!--         <li>
           <a href="http://www.homerecsupply.com/index.php?route=information/information&information_id=3">Arcade &amp; Pinball Repair</a>
-        </li>
+        </li> -->
       </ul>
     </div>
   </nav>
