@@ -8,6 +8,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google-site-verification" content="ay5NeJW-ziZ96RjhpsHdfg2V_WB4hBunXP9xLWtIdsc" />
 <title><?php echo $title; ?></title>
 <base href="<?php echo $base; ?>" />
 <?php if ($description) { ?>
